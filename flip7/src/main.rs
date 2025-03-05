@@ -1,21 +1,38 @@
+use std::io;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+use std::collections::HashMap;
+
 fn main() {
-    println!("Hello, world!");
+    println!("Press h to hit, s to stay");
     let mut deck:Deck = Deck::new();
-    let card = deck.draw_card();
-    println!("Card Drawn: {card}");
-    
+    let mut player:Player = Player::new();
+    let mut play_game = true;
+    while play_game {
+        let mut guess = String::new();
+        io::stdin().read_line(&mut guess).expect("failed to read");
+        if guess == "h\n"{
+            player.add_to_hand(deck.draw_card());
+            player.print_cards();
+        }else if guess == "s\n" {
+           
+        
+        }else {
+            play_game = false;
+        }
+        
+    }
 }
 
 pub struct Deck{
     cards:Vec<u8>
 }
-
-impl Deck{
-    
+impl Default for Deck{
     fn default() -> Self {
         Self::new()
     }
-    
+}
+impl Deck{
 
     pub fn new() -> Self{
         let mut cards:Vec<u8> = Vec::new();
@@ -40,6 +57,8 @@ impl Deck{
         cards.push(SpecialCards::SecondChance as u8);
         cards.push(SpecialCards::SecondChance as u8);
         cards.push(SpecialCards::SecondChance as u8);
+        let mut rng = thread_rng();
+        cards.shuffle(&mut rng);
         Self {cards}
     }
   
@@ -51,6 +70,74 @@ impl Deck{
         self.cards.pop().expect("tried to draw from the deck while empty")
   }
 }
+
+pub struct Player{
+    cards:HashMap<u8,u8>,
+    score:u16,
+    total:u16,
+    state:PlayerState
+}
+impl Player{
+    pub fn new() -> Self{
+        Self{
+            cards:HashMap::new(),
+            score:0,
+            total:0,
+            state:PlayerState::Playing
+        }
+    }      
+
+    pub fn add_to_hand(&mut self, card:u8) -> (){
+        self.total+= card as u16;
+        println!("Card drawn: {card}");
+        let count = self.cards.entry(card).or_insert(0);
+        *count += 1;
+        if *count > 1 as u8 && card < SpecialCards::Plus2 as u8 {
+            self.state = PlayerState::Busted;
+            println!("BUSTED");
+        }
+        println!("Card copies: {count}");
+    }
+
+    pub fn discard_hand(&mut self){
+        
+    }
+
+    pub fn stay(&mut self){
+        self.score+= self.total;
+        let score = self.score; 
+        self.state = PlayerState::Stay;
+        println!("Player stayed with {score} points ")
+    }
+
+    pub fn print_cards(&self){
+        let total = self.total;
+        println!("Card total:{total}");
+    }
+}
+pub struct Game{
+    players:Vec<Player>,
+    deck:Deck
+}
+
+impl Game{
+    pub fn new() -> Self{
+        Self{ 
+            players:Vec::new(),
+            deck:Deck::new()
+        }
+    }
+    pub fn add_player(&mut self, new_player:Player){
+        self.players.push(new_player);
+    }
+
+}
+enum PlayerState{
+    Playing,
+    Busted,
+    Stay
+}
+
 enum SpecialCards{
     Plus2 = 13,
     Plus4 = 14,
@@ -63,3 +150,4 @@ enum SpecialCards{
     SecondChance = 21
     
 }
+
