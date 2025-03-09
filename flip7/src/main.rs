@@ -5,7 +5,8 @@ use std::collections::HashMap;
 
 fn main() {
     println!("Press h to hit, s to stay");
-    let mut deck:Deck = Deck::new();
+    let mut game:Game = Game::new();
+    let mut deck:Deck = game.deck;
     let mut player:Player = Player::new();
     let mut play_game = true;
     while play_game {
@@ -15,8 +16,9 @@ fn main() {
             player.add_to_hand(deck.draw_card());
             player.print_cards();
         }else if guess == "s\n" {
-           
-        
+    let mut game:Game = Game::new();
+            game.discard_hand( player.get_hand());
+            player.print_cards();
         }else {
             play_game = false;
         }
@@ -88,8 +90,8 @@ impl Player{
     }      
 
     pub fn add_to_hand(&mut self, card:u8) -> (){
-        self.total+= card as u16;
-        println!("Card drawn: {card}");
+        if card < SpecialCards::Plus2 as u8 { self.total+= card as u16; }
+        println!("Card drawn: [{card}]");
         let count = self.cards.entry(card).or_insert(0);
         *count += 1;
         if *count > 1 as u8 && card < SpecialCards::Plus2 as u8 {
@@ -99,8 +101,8 @@ impl Player{
         println!("Card copies: {count}");
     }
 
-    pub fn discard_hand(&mut self){
-        
+    pub fn get_hand(&mut self) -> &mut HashMap<u8,u8>{
+        &mut self.cards
     }
 
     pub fn stay(&mut self){
@@ -112,23 +114,49 @@ impl Player{
 
     pub fn print_cards(&self){
         let total = self.total;
+        let mut hand :String = "".to_owned();
+        for(&card,&count) in self.cards.iter(){
+            hand.push_str("[");
+            hand.push_str(&(card.to_string()));
+            hand.push_str("]");
+         
+            for _i in 0..count-1{
+                hand.push_str("[");
+                hand.push_str(&(card.to_string()));
+                hand.push_str("]");
+            }
+        
+        }
+        println!("{hand}");
         println!("Card total:{total}");
     }
 }
 pub struct Game{
     players:Vec<Player>,
-    deck:Deck
+    deck:Deck,
+    discard:Vec<u8>
 }
 
 impl Game{
     pub fn new() -> Self{
         Self{ 
             players:Vec::new(),
-            deck:Deck::new()
+            deck:Deck::new(),
+            discard:Vec::new()
         }
     }
     pub fn add_player(&mut self, new_player:Player){
         self.players.push(new_player);
+    }
+
+    pub fn discard_hand(&mut self, cards: &mut HashMap<u8,u8>){
+        for(&card,&count) in cards.iter(){
+            for _i in 0..count{
+                self.discard.push(card);
+                println!("{card}")
+            }
+        }
+        cards.clear();
     }
 
 }
